@@ -20,9 +20,10 @@ pub fn lex(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     // 正規表現でトークンをパターンマッチング
     // TODO: 増えると大変なのでどうするかは後で考える
-    let document_start_re = Regex::new(r"📄").unwrap();
-    let text_re = Regex::new(r"🔤(.*?)🔤").unwrap();
-    let image_re = Regex::new(r"🖼️\((.*?)\)").unwrap();
+    let document_start_re = Regex::new(r"\u{1F4C4}").unwrap();  // 📄
+    let text_re = Regex::new(r"\u{1F524}(.*?)\u{1F524}").unwrap();  // 🔤
+    let image_re = Regex::new(r"\u{1F5BC}\((.*?)\)").unwrap();  // 🖼️
+
 
     // 📄(DOCTYPE)
     if document_start_re.is_match(input) {
@@ -52,10 +53,9 @@ pub fn lex(input: &str) -> Vec<Token> {
 mod tests {
     use super::*;
 
-    // 該当の絵文字トークンがある場合には、正しく解析されること
     #[test]
     fn test_lex() {
-        let input = "📄🔤Hello World🔤🖼️(https://example.com/image.jpg)";
+        let input = "\u{1F4C4}\u{1F524}Hello World\u{1F524}\u{1F5BC}(https://example.com/image.jpg)";
         let tokens = lex(input);
         assert_eq!(tokens, vec![
             Token::DocumentStart,
@@ -64,10 +64,9 @@ mod tests {
         ]);
     }
 
-    // 絵文字トークンがない場合は、Unknownになること
     #[test]
     fn test_unknown() {
-        let input = "🚀";
+        let input = "\u{1F680}";  // 🚀
         let tokens = lex(input);
         assert_eq!(tokens, vec![Token::Unknown]);
     }
