@@ -12,6 +12,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "lexer",
+ "parser",
+]
+
+[[package]]
 name = "emo-lan"
 version = "0.1.0"
 
