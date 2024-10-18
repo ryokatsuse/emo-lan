@@ -1,4 +1,4 @@
-workspace = { members = ["lexer", "parser", "cli"] }
+workspace = { members = ["lexer", "parser", "cli", "common"] }
 [package]
 name = "emo-lan"
 version = "0.1.0"
