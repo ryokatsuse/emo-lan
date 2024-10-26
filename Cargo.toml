@@ -1,9 +1,11 @@
-workspace = { members = ["lexer", "parser", "cli", "common"] }
+[workspace]
+members = ["lexer", "parser", "cli", "common"]
+
 [package]
 name = "emo-lan"
 version = "0.1.0"
+authors = ["Ryo Katsuse <ryokatsu0719@gmail.com>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+description = "A language that compiles emoji-based syntax into HTML."
+license = "MIT"
+repository = "https://github.com/ryokatsuse/emo-lan"
