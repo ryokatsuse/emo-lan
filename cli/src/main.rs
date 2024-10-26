@@ -1,8 +1,23 @@
 use lexer::lex;
 use parser::{parse, analyze, compile, save_to_file};
+use std::env;
+use std::fs;
 
 fn main() {
-    let input = "\u{1F4C4}\u{1F524}Hello World\u{1F524}\u{1F5BC}(https://example.com/image.jpg)";
+    // コマンドライン引数からファイルパスを取得
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        println!("Usage: cli <file.el>");
+        return;
+    }
+
+    // .elファイルを読み込む
+    let filename = &args[1];
+    let content = fs::read_to_string(filename).expect("Failed to read the .el file");
+
+    // 読み込んだ内容をinputとして扱う
+    let input = content.trim();  // ファイル内容をそのまま処理
+
     // 字句解析
     let tokens = lex(input);
     println!("Tokens: {:?}", tokens);
@@ -20,7 +35,6 @@ fn main() {
         }
     }
 
-    // コンパイル
     match compile(&ast) {
         Ok(html) => {
             // コンソールにHTMLを表示
