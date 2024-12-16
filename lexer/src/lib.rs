@@ -1,41 +1,47 @@
-use regex::Regex;
 use common::Token;
+use regex::Regex;
+use lazy_static::lazy_static;
 
-// 字句解析を行う関数
-// 字句解析を行う関数
-// 字句解析を行う関数
+lazy_static! {
+    static ref DOCUMENT_START: Regex = Regex::new(r"📄").unwrap();
+    static ref TEXT_PATTERN: Regex = Regex::new(r"🔤([^🔤]*)🔤").unwrap();
+    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\((.*?)\)").unwrap();
+}
+
 pub fn lex(input: &str) -> Vec<Token> {
+    println!("Raw input to lex: {:?}", input);
+    let input = input.trim();
+    println!("Trimmed input to lex: {:?}", input);
     let mut tokens = Vec::new();
-    // 正規表現でトークンをパターンマッチング
-    let document_start_re = Regex::new(r"\u{1F4C4}").unwrap();  // 📄
-    let text_re = Regex::new(r"\u{1F524}(.*?)\u{1F524}").unwrap();  // 🔤
-    let image_re = Regex::new(r"\u{1F5BC}").unwrap();  // 🖼️を単純に探す
 
-    // 📄(DOCTYPE)
-    if document_start_re.is_match(input) {
+    if DOCUMENT_START.is_match(input) {
+        println!("DocumentStart matched");
         tokens.push(Token::DocumentStart);
     }
 
-    // 🔤(Paragraph)
-    for cap in text_re.captures_iter(input) {
-        tokens.push(Token::Text(cap[1].to_string()));
+    for cap in TEXT_PATTERN.captures_iter(input) {
+        if let Some(text) = cap.get(1) {
+            println!("Text matched: {}", text.as_str());
+            tokens.push(Token::Text(text.as_str().to_string()));
+        }
     }
 
-    // 🖼️(Image)を探す
-    if image_re.is_match(input) {
-        // 仮にURLを "https://example.com/image.jpg" として固定
-        tokens.push(Token::Image("https://example.com/image.jpg".to_string()));
-        println!("Image token found.");  // デバッグメッセージ
+    for cap in IMAGE_PATTERN.captures_iter(input) {
+        if let Some(url) = cap.get(1) {
+            println!("Image matched: {}", url.as_str());
+            tokens.push(Token::Image(url.as_str().to_string()));
+        }
     }
 
-    // 絵文字トークンがない場合はUnknown
+    // トークンが生成されない場合はUnknownを追加する
     if tokens.is_empty() {
+        println!("No tokens matched");
         tokens.push(Token::Unknown);
     }
 
+    println!("Tokens: {:?}", tokens);
     tokens
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -43,8 +49,9 @@ mod tests {
 
     #[test]
     fn test_lex() {
-        let input = "\u{1F4C4}\u{1F524}Hello World\u{1F524}\u{1F5BC}(https://example.com/image.jpg)";
+        let input = "📄🔤Hello World🔤🖼️(https://example.com/image.jpg)";
         let tokens = lex(input);
+        println!("Tokens: {:?}", tokens);
         assert_eq!(tokens, vec![
             Token::DocumentStart,
             Token::Text("Hello World".to_string()),
@@ -54,8 +61,9 @@ mod tests {
 
     #[test]
     fn test_unknown() {
-        let input = "\u{1F680}";  // 🚀
+        let input = "🚀";
         let tokens = lex(input);
+        println!("Tokens: {:?}", tokens);
         assert_eq!(tokens, vec![Token::Unknown]);
     }
 }

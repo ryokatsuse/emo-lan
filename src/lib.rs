@@ -1,64 +1,125 @@
 use wasm_bindgen::prelude::*;
+use regex::Regex;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref DOCUMENT_START: Regex = Regex::new(r"📄").unwrap();
+    static ref TEXT_PATTERN: Regex = Regex::new(r"🔤([^🔤]*)🔤").unwrap();
+    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\((.*?)\)").unwrap();
+}
 
 #[wasm_bindgen]
 pub fn compile_to_html(input: &str) -> String {
+    println!("Raw input: {:?}", input); 
     let tokens = lex(input);
+    println!("Tokens: {:?}", tokens);
     let ast = parse(tokens);
+    println!("AST: {:?}", ast); 
     match analyze(&ast) {
         Ok(_) => match compile(&ast) {
-            Ok(html) => html,
+            Ok(html) => {
+                println!("Generated HTML: {}", html);
+                html
+            }
             Err(_) => "Compile error".to_string(),
         },
         Err(_) => "Semantic analysis error".to_string(),
     }
 }
 
-// 字句解析
 pub fn lex(input: &str) -> Vec<Token> {
-    // 簡易的な字句解析の実装
-    if input.contains("📄") {
-        vec![Token::DocumentStart]
-    } else {
-        vec![Token::Unknown]
+    println!("Raw input to lex: {:?}", input);
+    let input = input.trim();
+    let mut tokens = Vec::new();
+
+    if DOCUMENT_START.is_match(input) {
+        tokens.push(Token::DocumentStart);
     }
+
+    for cap in TEXT_PATTERN.captures_iter(input) {
+        if let Some(text) = cap.get(1) {
+            tokens.push(Token::Text(text.as_str().to_string()));
+        }
+    }
+
+    for cap in IMAGE_PATTERN.captures_iter(input) {
+        if let Some(url) = cap.get(1) {
+            tokens.push(Token::Image(url.as_str().to_string()));
+        }
+    }
+
+    if tokens.is_empty() {
+        tokens.push(Token::Unknown);
+    }
+
+    println!("Tokens: {:?}", tokens);
+    tokens
 }
 
-// 構文解析
 pub fn parse(tokens: Vec<Token>) -> ASTNode {
-    // 簡易的な構文解析の実装
-    ASTNode::Document(tokens.into_iter().map(|t| match t {
-        Token::DocumentStart => ASTNode::Document(vec![]),
-        _ => ASTNode::Unknown,
-    }).collect())
-}
+    let mut nodes = Vec::new();
 
-// 意味解析
-pub fn analyze(ast: &ASTNode) -> Result<(), SemanticError> {
-    // 簡易的な意味解析の実装
-    match ast {
-        ASTNode::Document(_) => Ok(()),
-        _ => Err(SemanticError::MissingDocumentStart),
+    for token in tokens {
+        match token {
+            Token::DocumentStart => nodes.push(ASTNode::DocumentStart),
+            Token::Text(text) => nodes.push(ASTNode::Paragraph(text)),
+            Token::Image(url) => nodes.push(ASTNode::Image(url)),
+            Token::Unknown => nodes.push(ASTNode::Unknown),
+        }
     }
+
+    ASTNode::Document(nodes)
 }
 
-// HTML生成
-pub fn compile(ast: &ASTNode) -> Result<String, CompileError> {
-    // 簡易的なHTML生成の実装
+pub fn analyze(ast: &ASTNode) -> Result<(), SemanticError> {
     match ast {
-        ASTNode::Document(_) => Ok("<html><body></body></html>".to_string()),
+        ASTNode::Document(nodes) => {
+            if nodes.is_empty() || !matches!(nodes[0], ASTNode::DocumentStart) {
+                return Err(SemanticError::MissingDocumentStart);
+            }
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+pub fn compile(ast: &ASTNode) -> Result<String, CompileError> {
+    match ast {
+        ASTNode::Document(nodes) => {
+            let mut html = String::from("<!DOCTYPE html>\n<html>\n<body>\n");
+            for node in nodes {
+                html.push_str(&compile_node(node)?);
+            }
+            html.push_str("</body>\n</html>");
+            Ok(html)
+        }
         _ => Err(CompileError::GeneralError),
     }
 }
 
-// 必要な型定義
-#[derive(Debug)]
+fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
+    match node {
+        ASTNode::DocumentStart => Ok(String::new()),
+        ASTNode::Paragraph(text) => Ok(format!("<p>{}</p>\n", text)),
+        ASTNode::Image(url) => Ok(format!("<img src=\"{}\" alt=\"Image\" />\n", url)),
+        _ => Err(CompileError::GeneralError),
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Token {
     DocumentStart,
+    Text(String),
+    Image(String),
     Unknown,
 }
 
 #[derive(Debug)]
 pub enum ASTNode {
+    DocumentStart,
+    Paragraph(String),
+    Image(String),
     Document(Vec<ASTNode>),
     Unknown,
 }
@@ -81,7 +142,6 @@ mod tests {
     fn test_compile_to_html() {
         let input = "📄🔤Hello World🔤🖼️(https://example.com/image.jpg)";
         let output = compile_to_html(input);
-        println!("Generated HTML:\n{}", output); // HTML出力を表示
         assert_eq!(
             output,
             r#"<!DOCTYPE html>
