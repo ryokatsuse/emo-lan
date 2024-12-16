@@ -4,8 +4,14 @@ members = ["lexer", "parser", "cli", "common"]
 [package]
 name = "emo-lan"
 version = "0.1.0"
-authors = ["Ryo Katsuse <ryokatsu0719@gmail.com>"]
+authors = ["infixer <ryokatsu0719@gmail.com>"]
 edition = "2021"
 description = "A language that compiles emoji-based syntax into HTML."
 license = "MIT"
 repository = "https://github.com/ryokatsuse/emo-lan"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
