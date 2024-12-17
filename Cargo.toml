@@ -3,7 +3,7 @@ members = ["lexer", "parser", "cli", "common"]
 
 [package]
 name = "emo-lan"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["infixer <ryokatsu0719@gmail.com>"]
 edition = "2021"
 description = "A language that compiles emoji-based syntax into HTML."
