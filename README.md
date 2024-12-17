@@ -63,6 +63,10 @@ cargo test
 
 ## Usage
 
+### Online Playground
+
+Try emo-lan directly in your browser using our [online playground](https://emo-lan-playground.vercel.app/).
+
 ### Command Line Interface
 
 Create a file with `.el` extension and write your emo-lan code:
