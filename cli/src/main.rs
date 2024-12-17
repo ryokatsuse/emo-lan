@@ -13,11 +13,11 @@ fn main() {
 
     // .elファイルを読み込む
     let filename = &args[1];
-    println!("Attempting to read file: {}", filename); // デバッグ出力
+    println!("Attempting to read file: {}", filename);
     let content = fs::read_to_string(filename).expect("Failed to read the .el file");
 
     // 読み込んだ内容をinputとして扱う
-    let input = content.trim(); // ファイル内容をそのまま処理
+    let input = content.trim();
 
     // 字句解析
     let tokens = lex(input);

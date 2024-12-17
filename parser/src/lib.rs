@@ -3,10 +3,10 @@ use std::{fs::File, io::Write};
 use common::{Token, ASTNode};
 
 // 意味解析用のエラー型
-#[derive(Debug, PartialEq)]  // PartialEqを追加して比較できるようにする
+#[derive(Debug, PartialEq)]
 pub enum SemanticError {
-    DocumentStartMissing, // 📄 が最初にない場合
-    InvalidImageUrl,      // 不正な画像URL
+    DocumentStartMissing,
+    InvalidImageUrl,
 }
 
 // HTMLのコンパイルエラー型
@@ -22,7 +22,7 @@ pub fn parse(tokens: Vec<Token>) -> ASTNode {
 
     for token in tokens {
         match token {
-            Token::DocumentStart => nodes.push(ASTNode::DocumentStart), // DocumentStartノードを追加
+            Token::DocumentStart => nodes.push(ASTNode::DocumentStart),
             Token::Text(text) => nodes.push(ASTNode::Paragraph(text)),
             Token::Image(url) => nodes.push(ASTNode::Image(url)),
             Token::Unknown => nodes.push(ASTNode::Unknown),
@@ -76,8 +76,8 @@ pub fn compile(ast: &ASTNode) -> Result<String, CompileError> {
 // 各ASTノードをHTMLに変換する関数
 fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
     match node {
-        ASTNode::DocumentStart => Ok(String::new()),  // DocumentStartはHTMLとしては無視
-        ASTNode::Paragraph(text) => Ok(format!("<p>{}</p>\n", text)),  // Paragraph -> <p>
+        ASTNode::DocumentStart => Ok(String::new()),
+        ASTNode::Paragraph(text) => Ok(format!("<p>{}</p>\n", text)),
         ASTNode::Image(url) => {
             // Image -> <img>
             println!("Compiling image with URL: {}", url); // デバッグ用出力
@@ -88,8 +88,8 @@ fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
 }
 
 pub fn save_to_file(filename: &str, content: &str) -> std::io::Result<()> {
-    let mut file = File::create(filename)?;  // ファイルを作成
-    file.write_all(content.as_bytes())?;  // コンテンツを書き込む
+    let mut file = File::create(filename)?;
+    file.write_all(content.as_bytes())?;
     Ok(())
 }
 
