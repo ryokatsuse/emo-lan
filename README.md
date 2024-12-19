@@ -16,12 +16,12 @@ A programming language that uses emoji pictograms to generate HTML. Write your c
 |-------|-------------|-------------|
 | 📄 | Document start (required) | `<!DOCTYPE html>` |
 | 🔤text🔤 | Text content | `<p>text</p>` |
-| 🖼️(url) | Image | `<img src="url" alt="Image" />` |
+| 🖼️[alt](url) | Image with alt text | `<img src="url" alt="alt" />` |
 
 ### Example
 
 ```
-📄🔤Hello World🔤🖼️(https://example.com/image.jpg)
+📄🔤Hello World🔤🖼️[Cute cat photo](https://example.com/cat.jpg)
 ```
 
 Generates:
@@ -31,7 +31,7 @@ Generates:
 <html>
 <body>
 <p>Hello World</p>
-<img src="https://example.com/image.jpg" alt="Image" />
+<img src="https://example.com/cat.jpg" alt="Cute cat photo" />
 </body>
 </html>
 ```
