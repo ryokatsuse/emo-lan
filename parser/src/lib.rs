@@ -24,7 +24,7 @@ pub fn parse(tokens: Vec<Token>) -> ASTNode {
         match token {
             Token::DocumentStart => nodes.push(ASTNode::DocumentStart),
             Token::Text(text) => nodes.push(ASTNode::Paragraph(text)),
-            Token::Image(url) => nodes.push(ASTNode::Image(url)),
+            Token::Image { url, alt } => nodes.push(ASTNode::Image { url, alt }),
             Token::Unknown => nodes.push(ASTNode::Unknown),
         }
     }
@@ -46,7 +46,7 @@ pub fn analyze(ast: &ASTNode) -> Result<(), SemanticError> {
                 analyze(node)?;  // 再帰的に各ノードを解析
             }
         }
-        ASTNode::Image(url) => {
+        ASTNode::Image { url, alt: _ } => {
             // 画像URLの検証
             if !url.starts_with("http://") && !url.starts_with("https://") {
                 return Err(SemanticError::InvalidImageUrl);
@@ -78,10 +78,8 @@ fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
     match node {
         ASTNode::DocumentStart => Ok(String::new()),
         ASTNode::Paragraph(text) => Ok(format!("<p>{}</p>\n", text)),
-        ASTNode::Image(url) => {
-            // Image -> <img>
-            println!("Compiling image with URL: {}", url); // デバッグ用出力
-            Ok(format!("<img src=\"{}\" alt=\"Image\" />\n", url))
+        ASTNode::Image { url, alt } => {
+            Ok(format!("<img src=\"{}\" alt=\"{}\" />\n", url, alt))
         }
         _ => Err(CompileError::InvalidAST),
     }
@@ -102,7 +100,10 @@ mod tests {
         let ast = ASTNode::Document(vec![
             ASTNode::DocumentStart,
             ASTNode::Paragraph("Hello".to_string()),
-            ASTNode::Image("https://example.com/image.jpg".to_string())
+            ASTNode::Image {
+                url: "https://example.com/image.jpg".to_string(),
+                alt: "サンプル画像".to_string()
+            }
         ]);
         assert!(analyze(&ast).is_ok());
     }
@@ -119,7 +120,10 @@ mod tests {
     fn test_invalid_image_url() {
         let ast = ASTNode::Document(vec![
             ASTNode::DocumentStart,
-            ASTNode::Image("ftp://example.com/image.jpg".to_string())
+            ASTNode::Image {
+                url: "ftp://example.com/image.jpg".to_string(),
+                alt: "テスト画像".to_string()
+            }
         ]);
         assert_eq!(analyze(&ast), Err(SemanticError::InvalidImageUrl));
     }
@@ -129,14 +133,17 @@ mod tests {
         let ast = ASTNode::Document(vec![
             ASTNode::DocumentStart,
             ASTNode::Paragraph("Hello".to_string()),
-            ASTNode::Image("https://example.com/image.jpg".to_string())
+            ASTNode::Image {
+                url: "https://example.com/image.jpg".to_string(),
+                alt: "サンプル画像".to_string()
+            }
         ]);
         let result = compile(&ast).unwrap();
         let expected_html = r#"<!DOCTYPE html>
 <html>
 <body>
 <p>Hello</p>
-<img src="https://example.com/image.jpg" alt="Image" />
+<img src="https://example.com/image.jpg" alt="サンプル画像" />
 </body>
 </html>"#;
         assert_eq!(result.trim(), expected_html.trim());

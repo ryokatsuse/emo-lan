@@ -6,7 +6,7 @@
 pub enum Token {
     DocumentStart,    // 📄(DOCTYPE)
     Text(String),     // 🔤(Paragraph)
-    Image(String),    // 🖼️(Image URL)
+    Image { url: String, alt: String },    // 🖼️(Image URL)
     Unknown,          // 不明なトークン
 }
 
@@ -17,6 +17,6 @@ pub enum ASTNode {
     DocumentStart,            // ドキュメント開始を表すノード
     Document(Vec<ASTNode>),    // ドキュメントルート
     Paragraph(String),         // テキスト要素
-    Image(String),             // 画像要素
+    Image { url: String, alt: String },    // 画像要素
     Unknown,                   // 不明な要素
 }

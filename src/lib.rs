@@ -5,16 +5,16 @@ use lazy_static::lazy_static;
 lazy_static! {
     static ref DOCUMENT_START: Regex = Regex::new(r"📄").unwrap();
     static ref TEXT_PATTERN: Regex = Regex::new(r"🔤([^🔤]*)🔤").unwrap();
-    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\((.*?)\)").unwrap();
+    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\[(.*?)\]\((.*?)\)").unwrap();
 }
 
 #[wasm_bindgen]
 pub fn compile_to_html(input: &str) -> String {
-    println!("Raw input: {:?}", input); 
+    println!("Raw input: {:?}", input);
     let tokens = lex(input);
     println!("Tokens: {:?}", tokens);
     let ast = parse(tokens);
-    println!("AST: {:?}", ast); 
+    println!("AST: {:?}", ast);
     match analyze(&ast) {
         Ok(_) => match compile(&ast) {
             Ok(html) => {
@@ -43,8 +43,11 @@ pub fn lex(input: &str) -> Vec<Token> {
     }
 
     for cap in IMAGE_PATTERN.captures_iter(input) {
-        if let Some(url) = cap.get(1) {
-            tokens.push(Token::Image(url.as_str().to_string()));
+        if let (Some(alt), Some(url)) = (cap.get(1), cap.get(2)) {
+            tokens.push(Token::Image {
+                url: url.as_str().to_string(),
+                alt: alt.as_str().to_string(),
+            });
         }
     }
 
@@ -63,7 +66,7 @@ pub fn parse(tokens: Vec<Token>) -> ASTNode {
         match token {
             Token::DocumentStart => nodes.push(ASTNode::DocumentStart),
             Token::Text(text) => nodes.push(ASTNode::Paragraph(text)),
-            Token::Image(url) => nodes.push(ASTNode::Image(url)),
+            Token::Image { url, alt } => nodes.push(ASTNode::Image { url, alt }),
             Token::Unknown => nodes.push(ASTNode::Unknown),
         }
     }
@@ -102,7 +105,7 @@ fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
     match node {
         ASTNode::DocumentStart => Ok(String::new()),
         ASTNode::Paragraph(text) => Ok(format!("<p>{}</p>\n", text)),
-        ASTNode::Image(url) => Ok(format!("<img src=\"{}\" alt=\"Image\" />\n", url)),
+        ASTNode::Image { url, alt } => Ok(format!("<img src=\"{}\" alt=\"{}\" />\n", url, alt)),
         _ => Err(CompileError::GeneralError),
     }
 }
@@ -111,7 +114,7 @@ fn compile_node(node: &ASTNode) -> Result<String, CompileError> {
 pub enum Token {
     DocumentStart,
     Text(String),
-    Image(String),
+    Image { url: String, alt: String },
     Unknown,
 }
 
@@ -119,7 +122,7 @@ pub enum Token {
 pub enum ASTNode {
     DocumentStart,
     Paragraph(String),
-    Image(String),
+    Image { url: String, alt: String },
     Document(Vec<ASTNode>),
     Unknown,
 }
@@ -140,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_compile_to_html() {
-        let input = "📄🔤Hello World🔤🖼️(https://example.com/image.jpg)";
+        let input = "📄🔤Hello World🔤🖼️[サンプル画像](https://example.com/image.jpg)";
         let output = compile_to_html(input);
         assert_eq!(
             output,
@@ -148,7 +151,7 @@ mod tests {
 <html>
 <body>
 <p>Hello World</p>
-<img src="https://example.com/image.jpg" alt="Image" />
+<img src="https://example.com/image.jpg" alt="サンプル画像" />
 </body>
 </html>"#
         );

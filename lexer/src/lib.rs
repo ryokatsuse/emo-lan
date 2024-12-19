@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 lazy_static! {
     static ref DOCUMENT_START: Regex = Regex::new(r"📄").unwrap();
     static ref TEXT_PATTERN: Regex = Regex::new(r"🔤([^🔤]*)🔤").unwrap();
-    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\((.*?)\)").unwrap();
+    static ref IMAGE_PATTERN: Regex = Regex::new(r"🖼️\[(.*?)\]\((.*?)\)").unwrap();
 }
 
 pub fn lex(input: &str) -> Vec<Token> {
@@ -27,9 +27,11 @@ pub fn lex(input: &str) -> Vec<Token> {
     }
 
     for cap in IMAGE_PATTERN.captures_iter(input) {
-        if let Some(url) = cap.get(1) {
-            println!("Image matched: {}", url.as_str());
-            tokens.push(Token::Image(url.as_str().to_string()));
+        if let (Some(alt), Some(url)) = (cap.get(1), cap.get(2)) {
+            tokens.push(Token::Image {
+                url: url.as_str().to_string(),
+                alt: alt.as_str().to_string(),
+            });
         }
     }
 
@@ -49,13 +51,16 @@ mod tests {
 
     #[test]
     fn test_lex() {
-        let input = "📄🔤Hello World🔤🖼️(https://example.com/image.jpg)";
+        let input = "📄🔤Hello World🔤🖼️[alt text](https://example.com/image.jpg)";
         let tokens = lex(input);
         println!("Tokens: {:?}", tokens);
         assert_eq!(tokens, vec![
             Token::DocumentStart,
             Token::Text("Hello World".to_string()),
-            Token::Image("https://example.com/image.jpg".to_string())
+            Token::Image {
+                url: "https://example.com/image.jpg".to_string(),
+                alt: "alt text".to_string()
+            }
         ]);
     }
 
